@@ -1,9 +1,18 @@
 # Cheatsheet SQL · Git · Bash
 
+Este repositorio contiene una chuleta práctica en Markdown con los comandos y consultas más útiles de:
+
+- SQL: consultas básicas, filtros, inserciones, actualizaciones, borrados, agrupaciones, uniones y modificaciones de tablas.
+- Git: flujo de trabajo básico, ramas, remotos, deshacer cambios, stash y tags.
+- Bash: navegación de archivos, permisos, búsqueda, procesos, compresión y ejemplos de scripting.
+
+Cada comando o consulta incluye un comentario inline para recordar rápidamente su propósito.
+
 ---
 
-##  SQL - Consultas
+## SQL - Consultas básicas
 
+### SELECT
 ```sql
 SELECT columna1, columna2        -- selecciona columnas
 FROM tabla                       -- tabla origen
@@ -12,116 +21,113 @@ ORDER BY columna1 ASC            -- ordenar resultados
 LIMIT 10 OFFSET 0;               -- limitar y paginar
 ```
 
+### WHERE
 ```sql
-WHERE col = 10                   -- igualdad exacta
-AND otra_col BETWEEN 5 AND 15    -- rango (incluye extremos)
-AND texto ILIKE '%abc%'          -- búsqueda parcial (ignora mayúsculas, PostgreSQL)
-AND fecha >= CURRENT_DATE - INTERVAL '7 days'  -- últimos 7 días
-AND col IS NOT NULL              -- excluir valores nulos
-AND col IN (1,2,3);              -- lista de valores
+SELECT *
+FROM tabla
+WHERE columna = 'valor' AND otra_columna > 10;   -- filtra filas según condiciones
 ```
 
+### INSERT
 ```sql
--- INNER JOIN: solo coincidencias
-SELECT a.*, b.*
-FROM A a
-JOIN B b ON b.a_id = a.id;
-
--- LEFT JOIN: todo A aunque no tenga coincidencia en B
-SELECT a.*, b.*
-FROM A a
-LEFT JOIN B b ON b.a_id = a.id;
+INSERT INTO tabla (col1, col2)
+VALUES ('valor1', 'valor2');    -- inserta nuevas filas
 ```
 
+### UPDATE
 ```sql
-SELECT categoria, COUNT(*) AS n, AVG(precio) AS media
-FROM productos
-GROUP BY categoria                -- agrupar por categoría
-HAVING COUNT(*) > 5               -- filtrar sobre agregados
-ORDER BY n DESC;                  -- ordenar por número de productos
-```
-
-```sql
-SELECT id,
-  CASE
-    WHEN total >= 100 THEN 'VIP'   -- condicional: si >=100 → VIP
-    WHEN total >= 50  THEN 'MEDIO' -- si >=50 → MEDIO
-    ELSE 'BÁSICO'                  -- resto → BÁSICO
-  END AS nivel
-FROM clientes;
-```
-
-```sql
--- Subconsulta en SELECT
-SELECT id, (SELECT COUNT(*) FROM pedidos p WHERE p.cliente_id = c.id) AS pedidos
-FROM clientes c;
-
--- CTE (WITH): subconsulta reutilizable
-WITH ventas AS (
-  SELECT cliente_id, SUM(importe) total FROM pedidos GROUP BY cliente_id
-)
-SELECT c.id, c.nombre, v.total
-FROM clientes c
-JOIN ventas v ON v.cliente_id = c.id;
-```
-
-```sql
-SELECT
-  id, cliente_id, importe,
-  SUM(importe) OVER (PARTITION BY cliente_id ORDER BY fecha) AS acumulado,  -- acumulado
-  ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY fecha DESC) AS rn     -- ranking
-FROM pedidos;
-```
-
-```sql
-INSERT INTO tabla (a,b,c) VALUES (1,'x',NOW());   -- insertar fila
 UPDATE tabla
-SET campo = 'valor', actualizado_en = NOW()       -- actualizar fila
-WHERE id = 123;
-DELETE FROM tabla WHERE id = 123;                 -- borrar fila
+SET columna = 'nuevo_valor'
+WHERE id = 1;                   -- actualiza filas existentes
 ```
 
+### DELETE
 ```sql
-BEGIN;                                            -- iniciar transacción
-  UPDATE cuentas SET saldo = saldo - 100 WHERE id = 1; -- quitar saldo
-  UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2; -- añadir saldo
-COMMIT;                                           -- confirmar (o ROLLBACK para deshacer)
+DELETE FROM tabla
+WHERE id = 1;                   -- elimina filas específicas
+```
+
+### ORDER BY
+```sql
+SELECT *
+FROM tabla
+ORDER BY columna1 ASC, columna2 DESC;  -- ordena resultados
+```
+
+### GROUP BY
+```sql
+SELECT categoria, COUNT(*) AS total
+FROM productos
+GROUP BY categoria
+HAVING COUNT(*) > 5;            -- agrupa resultados y aplica funciones
+```
+
+### JOIN
+```sql
+SELECT a.id, b.nombre
+FROM tablaA a
+INNER JOIN tablaB b ON a.id_b = b.id;
+-- INNER JOIN: solo coincidencias
+-- LEFT JOIN: todas las filas de A y coincidencias de B
+-- RIGHT JOIN: todas las filas de B y coincidencias de A
+```
+
+### CREATE
+```sql
+CREATE TABLE empleados (
+  id SERIAL PRIMARY KEY,
+  nombre VARCHAR(100),
+  salario DECIMAL(10,2)
+);                               -- crea una tabla nueva
+```
+
+### ALTER
+```sql
+ALTER TABLE empleados ADD COLUMN departamento VARCHAR(50);
+ALTER TABLE empleados DROP COLUMN salario;
+ALTER TABLE empleados RENAME COLUMN nombre TO nombre_completo;
+-- modifica estructura de tablas
 ```
 
 ---
 
 ## Git - Control de versiones
 
+### Flujo básico
 ```bash
 git init                       # inicializa repositorio local
 git clone URL                  # clona repositorio remoto
-git status                     # estado actual
-git add .                      # añade todos los cambios
-git commit -m "mensaje"        # guarda cambios en commit
-git log --oneline --graph      # historial resumido y gráfico
+git status                     # muestra estado
+git add .                      # añade cambios
+git commit -m "mensaje"        # crea commit
+git log --oneline --graph      # historial resumido
 ```
 
+### Ramas
 ```bash
-git branch                     # lista ramas
-git switch -c nueva-rama       # crea y cambia a nueva rama
-git merge otra-rama            # fusiona rama en la actual
-git rebase main                # reescribe base (historial más limpio)
+git branch                     # listar ramas
+git switch -c nueva-rama       # crear y cambiar a nueva rama
+git merge otra-rama            # fusionar rama en la actual
+git rebase main                # reescribir historial sobre main
 ```
 
+### Remotos
 ```bash
-git remote -v                  # ver remotos configurados
+git remote -v                  # ver remotos
 git push origin main           # subir cambios
 git pull                       # traer y fusionar
 git fetch                      # traer sin fusionar
 ```
 
+### Deshacer
 ```bash
-git restore archivo.ext        # descarta cambios locales
-git reset --soft HEAD~1        # deshace último commit (mantiene cambios staged)
-git reset --hard HEAD~1        # borra commit y cambios
-git revert <commit>            # crea commit inverso (seguro en remoto)
+git restore archivo.ext        # descartar cambios locales
+git reset --soft HEAD~1        # deshacer commit, mantener cambios
+git reset --hard HEAD~1        # deshacer commit y cambios (⚠️ peligroso)
+git revert <commit>            # revertir commit sin romper historial
 ```
 
+### Stash
 ```bash
 git stash push -m "wip"        # guardar cambios temporales
 git stash list                 # listar stashes
@@ -129,6 +135,7 @@ git stash apply stash@{0}      # aplicar stash
 git stash drop stash@{0}       # eliminar stash
 ```
 
+### Tags
 ```bash
 git tag v1.0.0                 # crear tag de versión
 git push origin v1.0.0         # subir tag
@@ -138,59 +145,66 @@ git push origin v1.0.0         # subir tag
 
 ## Bash - Comandos esenciales
 
+### Navegación
 ```bash
 pwd                            # ruta actual
 ls -la                         # listar en detalle
-cd /ruta/                      # cambiar directorio
-touch file.txt                 # crear archivo vacío
-mkdir -p a/b/c                 # crear árbol de carpetas
-cp origen dest                 # copiar archivo
-mv origen dest                 # mover/renombrar
-rm archivo                     # eliminar archivo
-rm -r carpeta                  # eliminar carpeta y su contenido
+cd /ruta/                      # cambiar de directorio
+mkdir carpeta                  # crear directorio
+touch archivo.txt              # crear archivo vacío
 ```
 
+### Archivos
 ```bash
-chmod u+x script.sh            # dar permiso de ejecución
-chmod 644 file                 # rw-r--r-- (usuario rw, grupo r, otros r)
-chown usuario:grupo file       # cambiar propietario
+cp origen destino              # copiar
+mv origen destino              # mover/renombrar
+rm archivo                     # borrar archivo
+rm -r carpeta                  # borrar carpeta y contenido
 ```
 
+### Contenido
 ```bash
-grep -R "texto" .              # buscar texto en archivos
-grep -Rni "texto" .            # incluir nº de línea, ignore case
-find . -name "*.log"           # buscar archivos por nombre
-find . -type f -mtime -1       # archivos modificados en <1 día
+cat archivo.txt                # mostrar contenido
+head archivo.txt               # primeras líneas
+tail archivo.txt               # últimas líneas
+grep "texto" archivo.txt       # buscar texto
 ```
 
+### Procesos
 ```bash
-ps aux | grep nombre           # listar procesos por nombre
-top                            # ver procesos en tiempo real
-kill -TERM <pid>               # terminar proceso
-kill -9 <pid>                  # forzar terminar
-jobs                           # ver trabajos en segundo plano
-bg %1                          # enviar trabajo al background
-fg %1                          # traer trabajo al foreground
+ps aux                         # ver procesos
+top                            # procesos en tiempo real
+kill <PID>                     # terminar proceso
+jobs                           # ver trabajos en background
+fg %1                          # traer job al foreground
 ```
 
+### Permisos
 ```bash
-ip a                           # ver interfaces de red
-ss -tulpen                     # ver puertos abiertos
+chmod 755 script.sh            # cambiar permisos
+chown usuario:grupo archivo    # cambiar propietario
+```
+
+### Red y descargas
+```bash
+ip a                           # interfaces de red
+ss -tulpen                     # puertos abiertos
 curl -I https://ejemplo.com    # cabeceras HTTP
-wget URL                       # descargar archivo
 scp archivo user@host:/ruta/   # copiar archivo vía SSH
-ssh user@host                  # conectar por SSH
+ssh user@host                  # conectar vía SSH
 ```
 
+### Disco
 ```bash
-df -h                          # uso de discos
+df -h                          # uso de disco
 du -sh *                       # tamaño de carpetas/archivos
 ```
 
+### Scripts
 ```bash
 # variable
 NOMBRE="Iñigo"                 # asignar valor
-echo "Hola $NOMBRE"            # mostrar variable
+echo "Hola $NOMBRE"            # usar variable
 
 # bucle
 for f in *.txt; do             # recorrer todos los .txt
@@ -198,8 +212,7 @@ for f in *.txt; do             # recorrer todos los .txt
 done
 
 # condicional
-if [ -f "config.yml" ]; then   # si existe el archivo
+if [ -f "config.yml" ]; then   # si existe archivo
   echo "Config existe"
 fi
 ```
-
